@@ -8,9 +8,11 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.maps.android.ui.IconGenerator
 import edu.stanford.googlemaps.models.UserMap
 
 private const val TAG = "DisplayMapActivity"
@@ -45,12 +47,20 @@ class DisplayMapActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Log.i(TAG, "user map to render ${userMap.title}")
 
+
         // Add markers and move the camera
+        val iconGenerator = IconGenerator(this);
+        iconGenerator.setStyle(IconGenerator.STYLE_PURPLE);
+
         val boundsBuilder = LatLngBounds.builder()
         for (place in userMap.places) {
             val latlng = LatLng(place.latitude, place.longitude)
             boundsBuilder.include(latlng)
-            mMap.addMarker(MarkerOptions().position(latlng).title(place.title).snippet(place.description))
+            mMap.addMarker(MarkerOptions()
+                .position(latlng)
+                .title(place.title)
+                .icon(BitmapDescriptorFactory.fromBitmap(iconGenerator.makeIcon(place.title)))
+                .snippet(place.description))
         }
         mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 1000, 1000, 0))
     }
