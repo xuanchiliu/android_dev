@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
+import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,6 +21,7 @@ import edu.stanford.googlemaps.models.Place
 import edu.stanford.googlemaps.models.UserMap
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
+import java.util.*
 
 
 const val EXTRA_MAP_TITLE = "EXTRA_MAP_TITLE"
@@ -31,15 +33,17 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var userMaps: MutableList<UserMap>
     private lateinit var mapAdapter: MapsAdapter
+    private lateinit var displayMap: MutableList<UserMap>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         userMaps = deserializeUserMaps(this).toMutableList()
+        displayMap = deserializeUserMaps(this).toMutableList()
         // set layout manager on the recycler view
         rvMaps.layoutManager = LinearLayoutManager(this)
         // set adapter on the recycler view
-        mapAdapter = MapsAdapter(this, userMaps, object: MapsAdapter.OnClickListener{
+        mapAdapter = MapsAdapter(this, displayMap, object: MapsAdapter.OnClickListener{
             override fun onItemClick(position: Int) {
                 Log.i(TAG, "onClick $position")
                 // when user clicks on an item in RV, navigate to new activity
@@ -61,7 +65,40 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_search, menu)
-        val item_menu = menu?.findItem(R.id.menu_search)
+        val menu_item = menu?.findItem(R.id.menu_search)
+        if (menu_item != null) {
+            val searchView = menu_item.actionView as SearchView
+//            var searchPrompt = searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
+//            searchPrompt.hint = "Search"
+
+            searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
+                override fun onQueryTextSubmit(query: String): Boolean {
+
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String): Boolean {
+                    if (newText.isNotEmpty()) {
+                        displayMap.clear()
+                        val search = newText.toLowerCase(Locale.getDefault())
+                        userMaps.forEach{
+                            if (it.title.toLowerCase(Locale.getDefault()).contains(search)) {
+                                displayMap.add(it)
+                            }
+                        }
+                        rvMaps.adapter?.notifyDataSetChanged()
+
+                    }
+                    else {
+                        displayMap.clear()
+                        displayMap.addAll(userMaps)
+                        rvMaps.adapter?.notifyDataSetChanged()
+                    }
+                    return true
+                }
+
+            })
+        }
 
         return super.onCreateOptionsMenu(menu)
     }
@@ -101,6 +138,7 @@ class MainActivity : AppCompatActivity() {
             val userMap = data?.getSerializableExtra(EXTRA_USER_MAP) as UserMap
             Log.i(TAG, "On activity result with new map title ${userMap.title}")
             userMaps.add(userMap)
+            displayMap.add(userMap)
             mapAdapter.notifyItemInserted(userMaps.size - 1)
             // reset
             // userMaps = generateSampleData() as MutableList<UserMap>
