@@ -34,7 +34,7 @@ class MapsAdapter(val context: Context, val userMaps: List<UserMap>, val onClick
         textViewTitle.text = userMap.title
 
         val textViewPinCount = holder.itemView.findViewById<TextView>(R.id.tvPinCount)
-        textViewPinCount.text = "${userMap.places.size}"
+        textViewPinCount.text = "Places saved: ${userMap.places.size}"
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
