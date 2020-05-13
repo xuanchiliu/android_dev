@@ -15,8 +15,6 @@ import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import edu.stanford.googlemaps.models.Place
 import edu.stanford.googlemaps.models.UserMap
 import kotlinx.android.synthetic.main.activity_main.*
@@ -48,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "onClick $position")
                 // when user clicks on an item in RV, navigate to new activity
                 val intent = Intent(this@MainActivity, DisplayMapActivity::class.java)
-                intent.putExtra(EXTRA_USER_MAP, userMaps[position])
+                intent.putExtra(EXTRA_USER_MAP, displayMap[position])
                 startActivity(intent)
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
             }
@@ -68,8 +66,7 @@ class MainActivity : AppCompatActivity() {
         val menu_item = menu?.findItem(R.id.menu_search)
         if (menu_item != null) {
             val searchView = menu_item.actionView as SearchView
-//            var searchPrompt = searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
-//            searchPrompt.hint = "Search"
+            searchView.queryHint = "Search"
 
             searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
                 override fun onQueryTextSubmit(query: String): Boolean {
@@ -78,22 +75,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onQueryTextChange(newText: String): Boolean {
-                    if (newText.isNotEmpty()) {
-                        displayMap.clear()
-                        val search = newText.toLowerCase(Locale.getDefault())
-                        userMaps.forEach{
-                            if (it.title.toLowerCase(Locale.getDefault()).contains(search)) {
-                                displayMap.add(it)
-                            }
-                        }
-                        rvMaps.adapter?.notifyDataSetChanged()
-
-                    }
-                    else {
-                        displayMap.clear()
-                        displayMap.addAll(userMaps)
-                        rvMaps.adapter?.notifyDataSetChanged()
-                    }
+                    refreshMap(newText)
                     return true
                 }
 
@@ -103,6 +85,24 @@ class MainActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
+    private fun refreshMap(text: String){
+        if (text.isNotEmpty()) {
+            displayMap.clear()
+            val search = text.toLowerCase(Locale.getDefault())
+            userMaps.forEach{
+                if (it.title.toLowerCase(Locale.getDefault()).contains(search)) {
+                    displayMap.add(it)
+                }
+            }
+            rvMaps.adapter?.notifyDataSetChanged()
+
+        }
+        else {
+            displayMap.clear()
+            displayMap.addAll(userMaps)
+            rvMaps.adapter?.notifyDataSetChanged()
+        }
+    }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return super.onOptionsItemSelected(item)
     }
@@ -139,10 +139,18 @@ class MainActivity : AppCompatActivity() {
             Log.i(TAG, "On activity result with new map title ${userMap.title}")
             userMaps.add(userMap)
             displayMap.add(userMap)
-            mapAdapter.notifyItemInserted(userMaps.size - 1)
+            mapAdapter.notifyItemInserted(displayMap.size - 1)
             // reset
-            // userMaps = generateSampleData() as MutableList<UserMap>
+//             userMaps = generateSampleData() as MutableList<UserMap>
             serializeUserMaps(this, userMaps)
+
+            val searchview = findViewById<SearchView>(R.id.menu_search)
+//            Log.i(TAG, "searchQuery:"+searchview.query.toString())
+//            refreshMap(searchview.query.toString())
+
+            searchview.setQuery("", true)
+            refreshMap(searchview.query.toString())
+            searchview.setIconified(true)
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
